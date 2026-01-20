@@ -591,10 +591,10 @@
       totalSecondsToday: 0,
       sessions: [],
       lastDate: null,
-      sessionIntervalId: null,
-      totalIntervalId: null,
+      updateIntervalId: null,
       currentSessionStart: null,
-      dayTimerStart: null
+      dayTimerStart: null,
+      lastUpdateTime: null
     };
 
     // DOM elements
@@ -628,12 +628,12 @@
       checkNewDay();
       updateDisplay();
       
-      if (state.isSessionRunning) {
-        startSessionTimer();
-      }
-      
-      if (state.isDayTimerRunning) {
-        startDayTimer();
+      // Restart update timer if session is running
+      if (state.isSessionRunning && state.currentSessionStart) {
+        state.updateIntervalId = setInterval(() => {
+          updateDisplay();
+          saveState();
+        }, 1000);
       }
 
       // Check for auto-start
@@ -648,18 +648,14 @@
       const today = new Date().toDateString();
       if (state.lastDate && state.lastDate !== today) {
         // New day - reset daily totals but keep config
-        state.totalSecondsToday = 0;
         state.sessions = [];
-        state.currentSessionSeconds = 0;
         state.isSessionRunning = false;
         state.isDayTimerRunning = false;
-        if (state.sessionIntervalId) {
-          clearInterval(state.sessionIntervalId);
-          state.sessionIntervalId = null;
-        }
-        if (state.totalIntervalId) {
-          clearInterval(state.totalIntervalId);
-          state.totalIntervalId = null;
+        state.currentSessionStart = null;
+        state.dayTimerStart = null;
+        if (state.updateIntervalId) {
+          clearInterval(state.updateIntervalId);
+          state.updateIntervalId = null;
         }
       }
       state.lastDate = today;
@@ -704,8 +700,7 @@
       if (savedState) {
         const parsed = JSON.parse(savedState);
         state = { ...state, ...parsed };
-        state.sessionIntervalId = null; // Don't restore interval IDs
-        state.totalIntervalId = null;
+        state.updateIntervalId = null; // Don't restore interval ID
       }
     }
 
@@ -714,8 +709,6 @@
       const toSave = {
         isSessionRunning: state.isSessionRunning,
         isDayTimerRunning: state.isDayTimerRunning,
-        currentSessionSeconds: state.currentSessionSeconds,
-        totalSecondsToday: state.totalSecondsToday,
         sessions: state.sessions,
         lastDate: state.lastDate,
         currentSessionStart: state.currentSessionStart,
@@ -753,15 +746,34 @@
 
     // Update display
     function updateDisplay() {
-      const sessionEarnings = calculateEarnings(state.currentSessionSeconds);
-      const totalEarnings = calculateEarnings(state.totalSecondsToday);
+      // Calculate current session seconds from timestamp
+      let currentSessionSecs = 0;
+      if (state.isSessionRunning && state.currentSessionStart) {
+        const now = new Date();
+        const start = new Date(state.currentSessionStart);
+        currentSessionSecs = Math.floor((now - start) / 1000);
+      }
+      
+      // Calculate total seconds today from timestamp
+      let totalSecs = 0;
+      if (state.isDayTimerRunning && state.dayTimerStart) {
+        const now = new Date();
+        const dayStart = new Date(state.dayTimerStart);
+        totalSecs = Math.floor((now - dayStart) / 1000);
+      } else {
+        // Sum up all completed sessions
+        totalSecs = state.sessions.reduce((total, session) => total + session.seconds, 0);
+      }
+      
+      const sessionEarnings = calculateEarnings(currentSessionSecs);
+      const totalEarnings = calculateEarnings(totalSecs);
       const dailyTarget = calculateDailyTarget();
       const progress = Math.min((totalEarnings / dailyTarget) * 100, 100);
       
       sessionEarningsEl.textContent = sessionEarnings.toFixed(2);
-      sessionTimeEl.textContent = formatTime(state.currentSessionSeconds);
+      sessionTimeEl.textContent = formatTime(currentSessionSecs);
       earningsEl.textContent = totalEarnings.toFixed(2);
-      timeWorkedEl.textContent = formatTime(state.totalSecondsToday);
+      timeWorkedEl.textContent = formatTime(totalSecs);
       sessionCountEl.textContent = state.sessions.length.toString();
       progressFillEl.style.width = `${progress}%`;
       progressLabelEl.textContent = `${progress.toFixed(1)}% of daily target`;
@@ -776,7 +788,7 @@
         currentSessionDiv.style.display = 'block';
       } else {
         runningIndicator.classList.remove('active');
-        if (state.currentSessionSeconds === 0 && state.sessions.length === 0) {
+        if (currentSessionSecs === 0 && state.sessions.length === 0) {
           currentSessionDiv.style.display = 'none';
         }
       }
@@ -819,26 +831,27 @@
 
     // Start session timer - starts both session and day timer if day timer not running
     function startSessionTimer() {
-      // Clear any existing session timer
-      if (state.sessionIntervalId) {
-        clearInterval(state.sessionIntervalId);
+      // Clear any existing update timer
+      if (state.updateIntervalId) {
+        clearInterval(state.updateIntervalId);
       }
       
-      state.currentSessionStart = new Date().toISOString();
-      
-      // Start session timer
-      state.sessionIntervalId = setInterval(() => {
-        state.currentSessionSeconds++;
-        updateDisplay();
-        saveState();
-      }, 1000);
-      
-      state.isSessionRunning = true;
+      const now = new Date().toISOString();
+      state.currentSessionStart = now;
       
       // If day timer isn't running, start it
       if (!state.isDayTimerRunning) {
-        startDayTimer();
+        state.dayTimerStart = now;
+        state.isDayTimerRunning = true;
       }
+      
+      state.isSessionRunning = true;
+      
+      // Update display every second
+      state.updateIntervalId = setInterval(() => {
+        updateDisplay();
+        saveState();
+      }, 1000);
       
       updateDisplay();
       saveState();
@@ -846,43 +859,34 @@
 
     // Start day timer - runs independently from sessions
     function startDayTimer() {
-      // Clear any existing day timer
-      if (state.totalIntervalId) {
-        clearInterval(state.totalIntervalId);
-      }
-      
       state.dayTimerStart = new Date().toISOString();
-      
-      // Start day timer
-      state.totalIntervalId = setInterval(() => {
-        state.totalSecondsToday++;
-        updateDisplay();
-        saveState();
-      }, 1000);
-      
       state.isDayTimerRunning = true;
       saveState();
     }
 
     // Stop session timer - saves the session but day timer keeps running
     function stopSessionTimer() {
-      // Clear session timer
-      if (state.sessionIntervalId) {
-        clearInterval(state.sessionIntervalId);
-        state.sessionIntervalId = null;
+      // Calculate actual duration from timestamps
+      const sessionEnd = new Date();
+      const sessionStart = new Date(state.currentSessionStart);
+      const durationSeconds = Math.floor((sessionEnd - sessionStart) / 1000);
+      
+      // Clear update timer
+      if (state.updateIntervalId) {
+        clearInterval(state.updateIntervalId);
+        state.updateIntervalId = null;
       }
       
-      // Save the session
-      if (state.currentSessionSeconds > 0) {
+      // Save the session with actual calculated duration
+      if (durationSeconds > 0 && state.currentSessionStart) {
         state.sessions.push({
           start: state.currentSessionStart,
-          end: new Date().toISOString(),
-          seconds: state.currentSessionSeconds
+          end: sessionEnd.toISOString(),
+          seconds: durationSeconds
         });
       }
       
       // Reset current session but day timer keeps running
-      state.currentSessionSeconds = 0;
       state.currentSessionStart = null;
       state.isSessionRunning = false;
       updateDisplay();
@@ -892,19 +896,13 @@
     // Reset timer - stops everything and clears all data
     function resetTimer() {
       if (confirm('Are you sure you want to reset all sessions for today? This will clear your entire daily history.')) {
-        // Stop both timers
-        if (state.sessionIntervalId) {
-          clearInterval(state.sessionIntervalId);
-          state.sessionIntervalId = null;
-        }
-        if (state.totalIntervalId) {
-          clearInterval(state.totalIntervalId);
-          state.totalIntervalId = null;
+        // Stop update timer
+        if (state.updateIntervalId) {
+          clearInterval(state.updateIntervalId);
+          state.updateIntervalId = null;
         }
         
         // Reset all state
-        state.currentSessionSeconds = 0;
-        state.totalSecondsToday = 0;
         state.sessions = [];
         state.isSessionRunning = false;
         state.isDayTimerRunning = false;
