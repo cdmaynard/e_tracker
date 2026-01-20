@@ -871,12 +871,6 @@
       const sessionStart = new Date(state.currentSessionStart);
       const durationSeconds = Math.floor((sessionEnd - sessionStart) / 1000);
       
-      // Clear update timer
-      if (state.updateIntervalId) {
-        clearInterval(state.updateIntervalId);
-        state.updateIntervalId = null;
-      }
-      
       // Save the session with actual calculated duration
       if (durationSeconds > 0 && state.currentSessionStart) {
         state.sessions.push({
@@ -889,6 +883,13 @@
       // Reset current session but day timer keeps running
       state.currentSessionStart = null;
       state.isSessionRunning = false;
+      
+      // Keep update timer running if day timer is still running
+      if (!state.isDayTimerRunning && state.updateIntervalId) {
+        clearInterval(state.updateIntervalId);
+        state.updateIntervalId = null;
+      }
+      
       updateDisplay();
       saveState();
     }
