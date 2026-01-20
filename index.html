@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Earnings Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 30px;
+      font-size: 32px;
+      font-weight: 600;
+    }
+
+    .earnings-display {
+      text-align: center;
+      margin: 40px 0;
+      font-size: 64px;
+      font-weight: 700;
+      color: #2d3748;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .currency {
+      font-size: 48px;
+      color: #667eea;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin: 30px 0;
+      padding: 25px;
+      background: #f7fafc;
+      border-radius: 12px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 25px 0 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      text-align: center;
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 25px;
+      font-weight: 500;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #cbd5e0;
+      color: #2d3748;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #a0aec0;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-danger {
+      background: #fc8181;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #f56565;
+      transform: translateY(-2px);
+    }
+
+    .settings-toggle {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn-settings {
+      background: none;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 10px 20px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      color: #4a5568;
+      font-weight: 500;
+      font-family: inherit;
+    }
+
+    .btn-settings:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+
+    .settings-panel {
+      margin-top: 25px;
+      padding: 25px;
+      background: #f7fafc;
+      border-radius: 12px;
+      display: none;
+    }
+
+    .settings-panel.visible {
+      display: block;
+    }
+
+    .settings-panel h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .setting-item {
+      margin-bottom: 20px;
+    }
+
+    .setting-item label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+
+    .setting-item input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s ease;
+      font-family: inherit;
+    }
+
+    .setting-item input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .settings-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .running-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #48bb78;
+      border-radius: 50%;
+      margin-left: 8px;
+      animation: pulse 2s infinite;
+      display: none;
+    }
+
+    .running-indicator.active {
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .session-history {
+      margin-top: 25px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .session-history h3 {
+      font-size: 14px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .session-item {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 3px solid #667eea;
+    }
+
+    .session-item-info {
+      flex: 1;
+    }
+
+    .session-item-time {
+      font-size: 13px;
+      color: #718096;
+      margin-bottom: 4px;
+    }
+
+    .session-item-duration {
+      font-size: 14px;
+      color: #2d3748;
+      font-weight: 600;
+    }
+
+    .session-item-earnings {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      font-size: 14px;
+      margin-top: -20px;
+      margin-bottom: 20px;
+    }
+
+    .current-session {
+      background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .current-session h2 {
+      font-size: 16px;
+      color: #667eea;
+      margin-bottom: 15px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .session-earnings {
+      font-size: 40px;
+      font-weight: 700;
+      color: #2d3748;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .currency-small {
+      font-size: 28px;
+      color: #667eea;
+    }
+
+    .session-time {
+      font-size: 18px;
+      color: #718096;
+      font-weight: 500;
+    }
+
+    .total-label {
+      font-size: 14px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .total-amount {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      Daily Earnings Tracker
+      <span class="running-indicator" id="runningIndicator"></span>
+    </h1>
+    <div class="subtitle">Track your real-time earnings</div>
+    
+    <div class="current-session" id="currentSession">
+      <h2>Current Session</h2>
+      <div class="session-earnings">
+        <span class="currency-small">£</span>
+        <span id="sessionEarnings">0.00</span>
+      </div>
+      <div class="session-time" id="sessionTime">0h 0m 0s</div>
+    </div>
+    
+    <div class="earnings-display">
+      <div class="total-label">Today's Total</div>
+      <div class="total-amount">
+        <span class="currency">£</span>
+        <span id="earnings">0.00</span>
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-label">Total Time Worked</div>
+        <div class="stat-value" id="timeWorked">0h 0m 0s</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Sessions Today</div>
+        <div class="stat-value" id="sessionCount">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Daily Target</div>
+        <div class="stat-value" id="targetDisplay">£675.60</div>
+      </div>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0% of daily target</div>
+    
+    <div class="controls">
+      <button id="startBtn" class="btn btn-primary">Start Session</button>
+      <button id="stopBtn" class="btn btn-secondary" disabled>Stop Session</button>
+      <button id="resetBtn" class="btn btn-danger">Reset Day</button>
+    </div>
+    
+    <div id="sessionHistory" class="session-history"></div>
+    
+    <div class="settings-toggle">
+      <button id="settingsBtn" class="btn-settings">⚙️ Settings</button>
+    </div>
+    
+    <div id="settingsPanel" class="settings-panel">
+      <h2>Settings</h2>
+      <div class="setting-item">
+        <label for="hourlyRate">Hourly Rate (£)</label>
+        <input type="number" id="hourlyRate" step="0.01" value="84.45">
+      </div>
+      <div class="setting-item">
+        <label for="dailyHours">Daily Hours</label>
+        <input type="number" id="dailyHours" step="0.5" value="8">
+      </div>
+      <div class="setting-item">
+        <label for="autoStartTime">Auto-start time (24hr format)</label>
+        <input type="time" id="autoStartTime" value="09:00">
+      </div>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="autoStartEnabled">
+          Enable auto-start
+        </label>
+      </div>
+      <div class="settings-buttons">
+        <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+        <button id="cancelSettingsBtn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    let config = {
+      hourlyRate: 84.45,
+      dailyHours: 8,
+      autoStartTime: '09:00',
+      autoStartEnabled: false
+    };
+
+    // State
+    let state = {
+      isSessionRunning: false,
+      isDayTimerRunning: false,
+      currentSessionSeconds: 0,
+      totalSecondsToday: 0,
+      sessions: [],
+      lastDate: null,
+      sessionIntervalId: null,
+      totalIntervalId: null,
+      currentSessionStart: null,
+      dayTimerStart: null
+    };
+
+    // DOM elements
+    const earningsEl = document.getElementById('earnings');
+    const sessionEarningsEl = document.getElementById('sessionEarnings');
+    const timeWorkedEl = document.getElementById('timeWorked');
+    const sessionTimeEl = document.getElementById('sessionTime');
+    const sessionCountEl = document.getElementById('sessionCount');
+    const progressFillEl = document.getElementById('progressFill');
+    const progressLabelEl = document.getElementById('progressLabel');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+    const hourlyRateInput = document.getElementById('hourlyRate');
+    const dailyHoursInput = document.getElementById('dailyHours');
+    const autoStartTimeInput = document.getElementById('autoStartTime');
+    const autoStartEnabledInput = document.getElementById('autoStartEnabled');
+    const targetDisplay = document.getElementById('targetDisplay');
+    const runningIndicator = document.getElementById('runningIndicator');
+    const sessionHistory = document.getElementById('sessionHistory');
+    const currentSessionDiv = document.getElementById('currentSession');
+
+    // Initialize
+    function init() {
+      loadConfig();
+      loadState();
+      checkNewDay();
+      updateDisplay();
+      
+      if (state.isSessionRunning) {
+        startSessionTimer();
+      }
+      
+      if (state.isDayTimerRunning) {
+        startDayTimer();
+      }
+
+      // Check for auto-start
+      checkAutoStart();
+      
+      // Check auto-start every minute
+      setInterval(checkAutoStart, 60000);
+    }
+
+    // Check if it's a new day and reset if needed
+    function checkNewDay() {
+      const today = new Date().toDateString();
+      if (state.lastDate && state.lastDate !== today) {
+        // New day - reset daily totals but keep config
+        state.totalSecondsToday = 0;
+        state.sessions = [];
+        state.currentSessionSeconds = 0;
+        state.isSessionRunning = false;
+        state.isDayTimerRunning = false;
+        if (state.sessionIntervalId) {
+          clearInterval(state.sessionIntervalId);
+          state.sessionIntervalId = null;
+        }
+        if (state.totalIntervalId) {
+          clearInterval(state.totalIntervalId);
+          state.totalIntervalId = null;
+        }
+      }
+      state.lastDate = today;
+    }
+
+    // Check if we should auto-start
+    function checkAutoStart() {
+      if (!config.autoStartEnabled || state.isDayTimerRunning) return;
+      
+      const now = new Date();
+      const [hours, minutes] = config.autoStartTime.split(':');
+      const autoStartHour = parseInt(hours);
+      const autoStartMinute = parseInt(minutes);
+      
+      if (now.getHours() === autoStartHour && now.getMinutes() === autoStartMinute) {
+        startSessionTimer();
+      }
+    }
+
+    // Load configuration from localStorage
+    function loadConfig() {
+      const savedConfig = localStorage.getItem('earningsTrackerConfig');
+      if (savedConfig) {
+        config = { ...config, ...JSON.parse(savedConfig) };
+      }
+      hourlyRateInput.value = config.hourlyRate;
+      dailyHoursInput.value = config.dailyHours;
+      autoStartTimeInput.value = config.autoStartTime;
+      autoStartEnabledInput.checked = config.autoStartEnabled;
+      updateDailyTarget();
+    }
+
+    // Save configuration to localStorage
+    function saveConfig() {
+      localStorage.setItem('earningsTrackerConfig', JSON.stringify(config));
+      updateDailyTarget();
+    }
+
+    // Load state from localStorage
+    function loadState() {
+      const savedState = localStorage.getItem('earningsTrackerState');
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        state = { ...state, ...parsed };
+        state.sessionIntervalId = null; // Don't restore interval IDs
+        state.totalIntervalId = null;
+      }
+    }
+
+    // Save state to localStorage
+    function saveState() {
+      const toSave = {
+        isSessionRunning: state.isSessionRunning,
+        isDayTimerRunning: state.isDayTimerRunning,
+        currentSessionSeconds: state.currentSessionSeconds,
+        totalSecondsToday: state.totalSecondsToday,
+        sessions: state.sessions,
+        lastDate: state.lastDate,
+        currentSessionStart: state.currentSessionStart,
+        dayTimerStart: state.dayTimerStart
+      };
+      localStorage.setItem('earningsTrackerState', JSON.stringify(toSave));
+    }
+
+    // Calculate earnings from seconds
+    function calculateEarnings(seconds) {
+      const secondsPerHour = 3600;
+      const earningsPerSecond = config.hourlyRate / secondsPerHour;
+      return seconds * earningsPerSecond;
+    }
+
+    // Calculate daily target
+    function calculateDailyTarget() {
+      return config.hourlyRate * config.dailyHours;
+    }
+
+    // Format time
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hours}h ${minutes}m ${secs}s`;
+    }
+
+    // Format time for session display (e.g., "09:30 - 11:45")
+    function formatSessionTime(startTime, endTime) {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      return `${start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    // Update display
+    function updateDisplay() {
+      const sessionEarnings = calculateEarnings(state.currentSessionSeconds);
+      const totalEarnings = calculateEarnings(state.totalSecondsToday);
+      const dailyTarget = calculateDailyTarget();
+      const progress = Math.min((totalEarnings / dailyTarget) * 100, 100);
+      
+      sessionEarningsEl.textContent = sessionEarnings.toFixed(2);
+      sessionTimeEl.textContent = formatTime(state.currentSessionSeconds);
+      earningsEl.textContent = totalEarnings.toFixed(2);
+      timeWorkedEl.textContent = formatTime(state.totalSecondsToday);
+      sessionCountEl.textContent = state.sessions.length.toString();
+      progressFillEl.style.width = `${progress}%`;
+      progressLabelEl.textContent = `${progress.toFixed(1)}% of daily target`;
+      
+      // Update button states
+      startBtn.disabled = state.isSessionRunning;
+      stopBtn.disabled = !state.isSessionRunning;
+      
+      // Update running indicator
+      if (state.isSessionRunning) {
+        runningIndicator.classList.add('active');
+        currentSessionDiv.style.display = 'block';
+      } else {
+        runningIndicator.classList.remove('active');
+        if (state.currentSessionSeconds === 0 && state.sessions.length === 0) {
+          currentSessionDiv.style.display = 'none';
+        }
+      }
+      
+      // Update session history
+      updateSessionHistory();
+    }
+
+    // Update session history display
+    function updateSessionHistory() {
+      if (state.sessions.length === 0) {
+        sessionHistory.innerHTML = '';
+        return;
+      }
+      
+      let html = '<h3>Today\'s Sessions</h3>';
+      
+      // Show sessions in reverse order (most recent first)
+      for (let i = state.sessions.length - 1; i >= 0; i--) {
+        const session = state.sessions[i];
+        const earnings = calculateEarnings(session.seconds);
+        html += `
+          <div class="session-item">
+            <div class="session-item-info">
+              <div class="session-item-time">${formatSessionTime(session.start, session.end)}</div>
+              <div class="session-item-duration">${formatTime(session.seconds)}</div>
+            </div>
+            <div class="session-item-earnings">£${earnings.toFixed(2)}</div>
+          </div>
+        `;
+      }
+      
+      sessionHistory.innerHTML = html;
+    }
+
+    // Update daily target display
+    function updateDailyTarget() {
+      targetDisplay.textContent = `£${calculateDailyTarget().toFixed(2)}`;
+    }
+
+    // Start session timer - starts both session and day timer if day timer not running
+    function startSessionTimer() {
+      // Clear any existing session timer
+      if (state.sessionIntervalId) {
+        clearInterval(state.sessionIntervalId);
+      }
+      
+      state.currentSessionStart = new Date().toISOString();
+      
+      // Start session timer
+      state.sessionIntervalId = setInterval(() => {
+        state.currentSessionSeconds++;
+        updateDisplay();
+        saveState();
+      }, 1000);
+      
+      state.isSessionRunning = true;
+      
+      // If day timer isn't running, start it
+      if (!state.isDayTimerRunning) {
+        startDayTimer();
+      }
+      
+      updateDisplay();
+      saveState();
+    }
+
+    // Start day timer - runs independently from sessions
+    function startDayTimer() {
+      // Clear any existing day timer
+      if (state.totalIntervalId) {
+        clearInterval(state.totalIntervalId);
+      }
+      
+      state.dayTimerStart = new Date().toISOString();
+      
+      // Start day timer
+      state.totalIntervalId = setInterval(() => {
+        state.totalSecondsToday++;
+        updateDisplay();
+        saveState();
+      }, 1000);
+      
+      state.isDayTimerRunning = true;
+      saveState();
+    }
+
+    // Stop session timer - saves the session but day timer keeps running
+    function stopSessionTimer() {
+      // Clear session timer
+      if (state.sessionIntervalId) {
+        clearInterval(state.sessionIntervalId);
+        state.sessionIntervalId = null;
+      }
+      
+      // Save the session
+      if (state.currentSessionSeconds > 0) {
+        state.sessions.push({
+          start: state.currentSessionStart,
+          end: new Date().toISOString(),
+          seconds: state.currentSessionSeconds
+        });
+      }
+      
+      // Reset current session but day timer keeps running
+      state.currentSessionSeconds = 0;
+      state.currentSessionStart = null;
+      state.isSessionRunning = false;
+      updateDisplay();
+      saveState();
+    }
+
+    // Reset timer - stops everything and clears all data
+    function resetTimer() {
+      if (confirm('Are you sure you want to reset all sessions for today? This will clear your entire daily history.')) {
+        // Stop both timers
+        if (state.sessionIntervalId) {
+          clearInterval(state.sessionIntervalId);
+          state.sessionIntervalId = null;
+        }
+        if (state.totalIntervalId) {
+          clearInterval(state.totalIntervalId);
+          state.totalIntervalId = null;
+        }
+        
+        // Reset all state
+        state.currentSessionSeconds = 0;
+        state.totalSecondsToday = 0;
+        state.sessions = [];
+        state.isSessionRunning = false;
+        state.isDayTimerRunning = false;
+        state.currentSessionStart = null;
+        state.dayTimerStart = null;
+        updateDisplay();
+        saveState();
+      }
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', () => {
+      startSessionTimer();
+    });
+
+    stopBtn.addEventListener('click', () => {
+      stopSessionTimer();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetTimer();
+    });
+
+    settingsBtn.addEventListener('click', () => {
+      settingsPanel.classList.toggle('visible');
+    });
+
+    cancelSettingsBtn.addEventListener('click', () => {
+      settingsPanel.classList.remove('visible');
+      hourlyRateInput.value = config.hourlyRate;
+      dailyHoursInput.value = config.dailyHours;
+      autoStartTimeInput.value = config.autoStartTime;
+      autoStartEnabledInput.checked = config.autoStartEnabled;
+    });
+
+    saveSettingsBtn.addEventListener('click', () => {
+      config.hourlyRate = parseFloat(hourlyRateInput.value);
+      config.dailyHours = parseFloat(dailyHoursInput.value);
+      config.autoStartTime = autoStartTimeInput.value;
+      config.autoStartEnabled = autoStartEnabledInput.checked;
+      saveConfig();
+      settingsPanel.classList.remove('visible');
+      updateDisplay();
+    });
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>
