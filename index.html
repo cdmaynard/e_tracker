@@ -210,20 +210,32 @@
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
     }
+    
+    .btn-primary:disabled {
+      background: #cbd5e0;
+      color: #718096;
+      cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
+    }
 
     .btn-secondary {
-      background: #cbd5e0;
-      color: #2d3748;
+      background: #48bb78;
+      color: white;
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: #a0aec0;
+      background: #38a169;
       transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(72, 187, 120, 0.4);
     }
 
     .btn-secondary:disabled {
-      opacity: 0.5;
+      background: #cbd5e0;
+      color: #718096;
       cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
     }
 
     .btn-danger {
